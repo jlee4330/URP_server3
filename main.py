@@ -164,12 +164,12 @@ def getData():
             })
     #print(chat_log)
 
-    latest_file = File.query.filter_by(user_id=user.id).order_by(File.id.desc()).first()
-    if latest_file:
-        imagefilename = latest_file.filename
-        file_url = f'/static/uploads/{imagefilename}'
-    else:
-        file_url = None
+    # latest_file = File.query.filter_by(user_id=user.id).order_by(File.id.desc()).first()
+    # if latest_file:
+    #     imagefilename = latest_file.filename
+    #     file_url = f'/static/uploads/{imagefilename}'
+    # else:
+    #     file_url = None
 
 
     latest_pdf = PDF.query.filter_by(user_id=user.id).order_by(PDF.id.desc()).first()
@@ -188,9 +188,32 @@ def getData():
         "secrets": secrets.secrets,
         "instructions": instructions.instructions,
         "chatData": chat_log,
-        "image": file_url,
+        #"image": file_url,
         "pdf": pdf_url
     })
+
+@main.route("/getImage", methods=['GET'])
+@cross_origin()
+@jwt_required()
+def getImage():
+
+    user = User.query.filter_by(email=get_jwt_identity()).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    latest_file = File.query.filter_by(user_id=user.id).order_by(File.id.desc()).first()
+    if latest_file:
+        imagefilename = latest_file.filename
+        file_url = f'/static/uploads/{imagefilename}'
+    else:
+        file_url = None
+
+    print(file_url)
+    return jsonify({
+        "image": file_url,
+    })
+
+
 
 
 #로그인
@@ -474,6 +497,7 @@ def upload_profile_image():
         new_file = File(user_id=user.id, filename=filename, filepath=filepath)
         db.session.add(new_file)
         print(new_file.filename)
+        print(file_url)
         db.session.commit()
 
 
@@ -531,12 +555,15 @@ def upload_pdf():
 
         return jsonify({"file_url": new_file.filepath}), 200
 
+
 def extract_text_from_pdf(file_path):
     doc = fitz.open(file_path)
     text = ''
     for page in doc:
         text += page.get_text()
     return text
+
+
 
 
 
